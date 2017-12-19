@@ -358,7 +358,7 @@ litnum1215 <- function(
       paste0("Literacy longitudinal scale score 2015 - PV", pv),
       paste0("Numeracy longitudinal scale score 2015 - PV", pv),
       XLabels[-1])
-    save.dta13(data = PVs[[pv]], file = paste0(path, "LitNum1215_", pv, ".dta"))
+    save.dta13(data = PVs[[pv]], file = paste0(path, "litnum1215_", pv, ".dta"))
   }
   t1 <- proc.time()
   ext <- round(round(t1[3] - t0[3]))
