@@ -1,0 +1,16 @@
+Package: PVPIAACL
+Type: Package
+Title: Plausible Values estimation with the PIAAC-L data
+Version: 0.0.0.9000
+Imports: readstata13, MASS, rpart, Hmisc 
+Author: Jean-Christoph Gaasch
+Maintainer: Anna Scharl <anna.scharl@lifbi.de>
+Description: Bayesian estimation algorithm that simultaneously 
+    generates plausible values and imputes missing values in 
+    background variables. It allows the user for extended 
+    analyses of the PIAAC and PIAAC-L assessment data.
+Depends: R (>= 3.4.0)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+RoxygenNote: 6.0.1
