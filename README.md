@@ -3,19 +3,7 @@ PVPIAACL: Plausible Values estimation with the PIAAC-L data
 
 The Programme for the International Assessment of Adult Competencies-Longitudinal (PIAAC-L) Germany consortium partner Leibniz Institute for Educational Trajectories developed an R package which implements a Bayesian estimation algorithm that simultaneously generates plausible values (pvs) and imputes missing values in background variables. In addition to the pvs released in the PIAAC and PIAAC-L scientific use files, users can estimate pvs themselves specific to their research question, i.e., users select context variables from the PIAAC-L Scientific Use Files which are suitable for their analysis and directly enter the population model during pvs estimation. This estimation strategy addresses both item nonresponse in background variables as well as the ``curse of dimensionality'' due to the extensively large background information resulting from three waves of data collection in PIAAC-L. 
 
-Currently `PVPIAACL` allows the user to fit multidimensional latent regression models. It applies a $D$-dimensional two-parameter normal ogive item response theory model
-
-\[
-P(y_{ijd}=1|\theta_{id},\alpha_{jd},\beta_{jd}) = \Phi(\alpha_{jd}\theta_{id} - \beta_{jd}),
-\]
-
-where $\theta_{id}$ denotes the individual latent ability, $\alpha_{jd}$ the item discriminations and $\beta_{jd}$ the item difficulty for dimension $d\in\{1,\ldots,D\}$ (Beguin & Glas, 2001) and a multivariate regression equation 
-
-\[
-\theta_i=x_i\Gamma + e_i,\quad e_i\overset{iid}{\sim}\mathcal{N}_D(0,\Sigma_e)
-\]
-
-to model the relationship between the latent trait and additional person covariates, where $x_i$ is a row vector of $K$ person covariates plus an intercept, $\Gamma$ a $(K+1)\times D$ matrix of regression weights and $\Sigma_e$ the residual covariance matrix. Thus, they combine the fields of measurement models and structural analysis. Latent regression models are typically employed to generate plausible values in large-scale assessments.
+Currently `PVPIAACL` allows the user to fit multidimensional latent regression models. It applies a $D$-dimensional two-parameter normal ogive item response theory model (Beguin & Glas, 2001) and a multivariate regression equation to model the relationship between the latent trait and additional person covariates. Thus, they combine the fields of measurement models and structural analysis. Latent regression models are typically employed to generate plausible values in large-scale assessments.
 
 NOTE THAT USERS REQUIRE THE PIAAC 2012 GERMANY (ZA5845) AND PIAAC-L (ZA5989) SCIENTIFIC-USE-FILES FROM THE RESEARCH DATA CENTRE PIAAC AT GESIS TO WORK WITH R PACKAGE 'PVPIAACL'!
 
