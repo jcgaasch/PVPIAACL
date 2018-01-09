@@ -1,9 +1,9 @@
-#' Plausible values imputation using the PIAAC 2012 and PIAAC-L 2015 assessment data in the domains of literacy and numeracy
+#' Plausible values imputation using the PIAAC 2012 assessment data in the domains of literacy, numeracy and problem solving
 #'
-#' This function estimates a four-dimensional latent regression item response model (first dimension: PIAAC 2012 literacy,
-#' second dimension: PIAAC 2012 numeracy, third dimension: PIAAC-L 2015 literacy, fourth dimension: PIAAC-L 2015 numeracy)
-#' for binary item response data considering partially missing covariate data. For more detailed information on the statistical
-#' model and the estimation algorithm, see the PIAAC-L technical report on scaling (Carstensen, Gaasch & Rothaug, 2017).
+#' This function estimates a three-dimensional latent regression model (first dimension: PIAAC 2012 literacy, second dimension:
+#' PIAAC 2012 numeracy, third dimension: PIAAC 2012 problem solving) for binary and ordinal item response data considering
+#' partially missing covariate data. For more detailed information on the statistical model and the estimation algorithm, see the
+#' PIAAC-L technical report on scaling (Carstensen, Gaasch & Rothaug, 2017).
 #' @param path full path of the folder containing the following PIAAC and PIAAC-L Scientific Use Files in Stata format: ZA5845,
 #' ZA5989_Persons_14, ZA5989_Household_14, ZA5989_Persons_15, ZA5989_Persons_16 and ZA5989_Household_16.
 #' @param XplusVars character vector containing additional background variable names from the PIAAC and PIAAC-L
@@ -23,10 +23,12 @@
 #' @importFrom readstata13 read.dta13 save.dta13
 #' @importFrom stats model.matrix runif rnorm pnorm qnorm predict
 #' @importFrom MASS mvrnorm
+#' @importFrom mvtnorm rmvt dmvt
+#' @importFrom ucminf ucminf
 #' @importFrom rpart rpart rpart.control
 #' @importFrom Hmisc wtd.mean wtd.var
 #' @export
-litnum1215 <- function(
+litnumps12 <- function(
   path,
   XplusVars = NULL,
   XplusVarsfactor = NULL,
@@ -46,8 +48,8 @@ litnum1215 <- function(
       files[grep(namesdat[dat], files)])))
   }
   names(DAT$ZA5845)[names(DAT$ZA5845) == "SEQID"] <- "seqid"
-  seqid1215 <- DAT$ZA5989_Persons_15$seqid[!is.na(DAT$ZA5989_Persons_15$seqid)]
-  Lit12 <- DAT$ZA5845[which(DAT$ZA5845$seqid %in% seqid1215),
+  seqid12 <- DAT$ZA5989_Persons_14$seqid[!is.na(DAT$ZA5989_Persons_14$seqid)]
+  Lit12 <- DAT$ZA5845[which(DAT$ZA5845$seqid %in% seqid12),
     c("seqid",
     "C301C05S", "C300C02S", "D302C02S", "D311701S", "C308120S", "E321001S",
     "E321002S", "C305215S", "C305218S", "C308117S", "C308119S", "C308121S",
@@ -63,7 +65,7 @@ litnum1215 <- function(
     "M305218S", "P317001S", "P317002S", "P317003S", "M310406S", "M310407S",
     "M309319S", "M309320S", "M309321S", "M309322S")]
   Lit12[, 2:77] <- lapply(Lit12[, 2:77], as.integer)
-  Num12 <- DAT$ZA5845[which(DAT$ZA5845$seqid %in% seqid1215),
+  Num12 <- DAT$ZA5845[which(DAT$ZA5845$seqid %in% seqid12),
     c("seqid",
     "C600C04S", "C601C06S", "E645001S", "C615602S", "C615603S", "C624619S",
     "C624620S", "C604505S", "C605506S", "C605507S", "C605508S", "E650001S",
@@ -79,72 +81,47 @@ litnum1215 <- function(
     "M624620S", "M618607S", "M618608S", "M604505S", "M610515S", "P664001S",
     "M602501S", "M602502S", "M602503S", "P655001S")]
   Num12[, 2:77] <- lapply(Num12[, 2:77], as.integer)
-  Lit15 <- DAT$ZA5989_Persons_15[which(DAT$ZA5989_Persons_15$seqid %in% seqid1215),
+  Ps12 <- DAT$ZA5845[which(DAT$ZA5845$seqid %in% seqid12),
     c("seqid",
-    "C301C05S_15", "C300C02S_15", "D302C02S_15", "D311701S_15", "C308120S_15",
-    "E321001S_15", "E321002S_15", "C305215S_15", "C305218S_15", "C308117S_15",
-    "C308119S_15", "C308121S_15", "C308118S_15", "D304710S_15", "D304711S_15",
-    "D315512S_15", "E327001S_15", "E327002S_15", "E327003S_15", "E327004S_15",
-    "C308116S_15", "C309320S_15", "C309321S_15", "D307401S_15", "D307402S_15",
-    "C313412S_15", "C313414S_15", "C309319S_15", "C309322S_15", "E322001S_15",
-    "E322002S_15", "E322005S_15", "E320001S_15", "E320003S_15", "E320004S_15",
-    "C310406S_15", "C310407S_15", "E322003S_15", "E323003S_15", "E323004S_15",
-    "E322004S_15", "D306110S_15", "D306111S_15", "C313410S_15", "C313411S_15",
-    "C313413S_15", "E318001S_15", "E318003S_15", "E323002S_15", "E323005S_15",
-    "E329002S_15", "E329003S_15", "M301C05S_15", "P330001S_15", "N302C02S_15",
-    "M300C02S_15", "N306110S_15", "N306111S_15", "M313410S_15", "M313411S_15",
-    "M313412S_15", "M313413S_15", "M313414S_15", "P324002S_15", "P324003S_15",
-    "M305215S_15", "M305218S_15", "P317001S_15", "P317002S_15", "P317003S_15",
-    "M310406S_15", "M310407S_15", "M309319S_15", "M309320S_15", "M309321S_15",
-    "M309322S_15")]
-  Lit15[, 2:77] <- lapply(Lit15[, 2:77], as.integer)
-  Num15 <- DAT$ZA5989_Persons_15[which(DAT$ZA5989_Persons_15$seqid %in% seqid1215),
-    c("seqid",
-    "C600C04S_15", "C601C06S_15", "E645001S_15", "C615602S_15", "C615603S_15",
-    "C624619S_15", "C624620S_15", "C604505S_15", "C605506S_15", "C605507S_15",
-    "C605508S_15", "E650001S_15", "C623616S_15", "C623617S_15", "C619609S_15",
-    "E657001S_15", "E646002S_15", "C620610S_15", "C620612S_15", "E632001S_15",
-    "E632002S_15", "C607510S_15", "C614601S_15", "C618607S_15", "C618608S_15",
-    "E635001S_15", "C613520S_15", "C608513S_15", "E655001S_15", "C602501S_15",
-    "C602502S_15", "C602503S_15", "C611516S_15", "C611517S_15", "C606509S_15",
-    "E665001S_15", "E665002S_15", "C622615S_15", "E636001S_15", "C617605S_15",
-    "C617606S_15", "E641001S_15", "E661001S_15", "E661002S_15", "E660003S_15",
-    "E660004S_15", "E634001S_15", "E634002S_15", "E651002S_15", "E664001S_15",
-    "E644002S_15", "C612518S_15", "M600C04S_15", "P601C06S_15", "P614601S_15",
-    "P645001S_15", "M615602S_15", "M615603S_15", "P640001S_15", "M620610S_15",
-    "M620612S_15", "P666001S_15", "M623616S_15", "M623617S_15", "M623618S_15",
-    "M624619S_15", "M624620S_15", "M618607S_15", "M618608S_15", "M604505S_15",
-    "M610515S_15", "P664001S_15", "M602501S_15", "M602502S_15", "M602503S_15",
-    "P655001S_15")]
-  Num15[, 2:77] <- lapply(Num15[, 2:77], as.integer)
+    "U01a000S", "U01b000S", "U02x000S", "U03a000S", "U04a000S", "U06a000S",
+    "U06b000S", "U07x000S", "U11b000S", "U16x000S", "U19a000S", "U19b000S",
+    "U21x000S", "U23x000S")]
+  Ps12[, 2:15] <- lapply(Ps12[, 2:15], as.integer)
   Lit12[, -c(1, 71)][Lit12[, -c(1, 71)] == 1] <- NA
   Lit12[, -c(1, 71)][Lit12[, -c(1, 71)] == 2] <- 1
   Lit12[, -c(1, 71)][Lit12[, -c(1, 71)] == 3] <- 0
   Lit12[, 71][Lit12[, 71] == 1] <- NA
-  Lit12[, 71][Lit12[, 71] %in% c(2, 3)] <- 1
+  Lit12[, 71][Lit12[, 71] == 2] <- 1
+  Lit12[, 71][Lit12[, 71] == 3] <- 2
   Lit12[, 71][Lit12[, 71] == 4] <- 0
   Num12[, -1][Num12[, -1] == 1] <- NA
   Num12[, -1][Num12[, -1] == 2] <- 1
   Num12[, -1][Num12[, -1] == 3] <- 0
-  Lit15[, -c(1, 71)][Lit15[, -c(1, 71)] == 2] <- NA
-  Lit15[, -c(1, 71)][Lit15[, -c(1, 71)] == 3] <- NA
-  Lit15[, -c(1, 71)][Lit15[, -c(1, 71)] == 4] <- 1
-  Lit15[, -c(1, 71)][Lit15[, -c(1, 71)] == 5] <- 0
-  Lit15[, 71][Lit15[, 71] %in% c(2, 3)] <- NA
-  Lit15[, 71][Lit15[, 71] %in% c(4, 5)] <- 1
-  Lit15[, 71][Lit15[, 71] == 6] <- 0
-  Num15[, -1][Num15[, -1] == 2] <- NA
-  Num15[, -1][Num15[, -1] == 3] <- NA
-  Num15[, -1][Num15[, -1] == 4] <- 1
-  Num15[, -1][Num15[, -1] == 5] <- 0
+  Ps12[, c(3, 5, 7, 8, 9, 11, 12, 14)][Ps12[, c(3, 5, 7, 8, 9, 11, 12, 14)] == 2] <- 1
+  Ps12[, c(3, 5, 7, 8, 9, 11, 12, 14)][Ps12[, c(3, 5, 7, 8, 9, 11, 12, 14)] == 3] <- 0
+  Ps12[, c(2, 4, 6, 10, 15)][Ps12[, c(2, 4, 6, 10, 15)] == 1] <- 0
+  Ps12[, c(2, 4, 6, 10, 15)][Ps12[, c(2, 4, 6, 10, 15)] == 2] <- 1
+  Ps12[, c(2, 4, 6, 10, 15)][Ps12[, c(2, 4, 6, 10, 15)] == 3] <- 2
+  Ps12[, c(2, 4, 6, 10, 15)][Ps12[, c(2, 4, 6, 10, 15)] == 4] <- 3
+  Ps12[, 13][Ps12[, 13] == 1] <- 0
+  Ps12[, 13][Ps12[, 13] == 2] <- 1
+  Ps12[, 13][Ps12[, 13] == 3] <- 2
   LN12 <- merge(Lit12, Num12, by = "seqid")
-  LN15 <- merge(Lit15, Num15, by = "seqid")
-  LN1215 <- merge(LN12, LN15, by = "seqid")
-  Y <- data.matrix(LN1215[, -1])
-  YOBS <- !is.na(Y)
+  LNP12 <- merge(LN12, Ps12, by = "seqid")
+  LNP12_valid <- LNP12[-which(rowSums(is.na(LNP12[, -1])) > 164), ] 
+  Y <- data.matrix(LNP12_valid[, -1])
+  YPL1 <- Y + 1
+  YPL2 <- Y + 2
+  Q <- apply(Y, 2, function(x){
+    length(unique(x[!is.na(x)]))
+  })
+  QMI2 <- Q - 2
+  ITEMBIN <- ifelse(Q == 2, TRUE, FALSE)
+  POSITEMORD <- which(Q > 2)
+  YOBS <- !is.na(Y)  
   N <- nrow(Y)
   J <- ncol(Y)
-  Xbasic <- LN1215[, 1, drop = FALSE]
+  Xbasic <- LNP12_valid[, 1, drop = FALSE]
   XbasicVars <- c("seqid", "AGE_R", "GENDER_R", "C_D05", "I_Q08", "J_Q01_C",
     "J_Q03a", "NATIVESPEAKER", "MONTHLYINCPR", "Federal_state", "GKPOL", "PARED",
     "IMGEN", "EDCAT8")
@@ -165,8 +142,8 @@ litnum1215 <- function(
     X <- Xbasic
     for(dat in uXplusVarswhichdat){
       X <- merge(X, subset(DAT[[dat]],
-        select = c("seqid", XplusVars[XplusVarswhichdat == dat])), by = "seqid", 
-        all.x = TRUE)
+        select = c("seqid", XplusVars[XplusVarswhichdat == dat])),
+        by = "seqid", all.x = TRUE)
       XLabels <- c(XLabels,
         attr(DAT[[dat]], "var.labels")[which(names(DAT[[dat]]) %in% XplusVars)])
     }
@@ -197,10 +174,12 @@ litnum1215 <- function(
       x
     }
   }))
-  DIM <- 4
-  J1dim <- J/DIM
-  J1diminv <- 1/J1dim
-  Jdim <- matrix(1:J, nrow = J1dim)
+  DIM <- 3  
+  Jdim <- c(76, 76, 14)
+  Jdiminv <- 1/Jdim
+  jdim <- list(1:76, 77:152, 153:166)
+  jdim2 <- c(rep(1, 76), rep(2, 76), rep(3, 14))
+  YLAT <- matrix(0, nrow = N, ncol = J)
   THETA <- matrix(rnorm(N*DIM), nrow = N, ncol = DIM)
   iterpvs <- sort(sample((burnin + 1):itermcmc, nopvs))
   PVs <- vector("list", nopvs)
@@ -225,31 +204,46 @@ litnum1215 <- function(
   SIGMA <- diag(DIM)
   ALPHA <- matrix(0, nrow = J, ncol = DIM)
   for(dim in 1:DIM){
-    ALPHA[Jdim[, dim], dim] <- 1
+    ALPHA[jdim[[dim]], dim] <- 1
   }
   BETA <- rep(0, J)
   XI <- rbind(rep(1, J), BETA)
+  TAU <- lapply(Q, function(x){
+    if(x == 2){
+      NULL
+    }else{
+      rep(0, x - 2)
+    }
+  })
+  KAPPA <- lapply(Q, function(x){
+    if(x == 2){
+      c(-1e+05, 0, 1e+05)
+    }else{
+      c(-1e+05, 0, cumsum(exp(rep(0, x - 2))), 1e+05)
+    }
+  })
   CovXi0 <- 100*diag(2)
   PrecXi0 <- solve(CovXi0)
   CovGamma0 <- 100*diag(K1X*DIM)
   PrecGamma0 <- solve(CovGamma0)
   NuSigma <- N + DIM
-  LO <- matrix(c(-Inf, 0)[Y + 1], N, J)
-  HI <- matrix(c(0, Inf)[Y + 1], N, J)
   ONES <- matrix(1, nrow = N, ncol = 1)
+  tdf <- 10
   cat("PVPIAACL is running...\n")
   cat("progress:\n")
   pb <- txtProgressBar(min = 0, max = itermcmc, style = 3)
   for(ii in 1:itermcmc){
     # (1)
     MU <- THETA%*%t(ALPHA) - ONES%*%BETA
-    FA <- pnorm(LO - MU)
-    FB <- pnorm(HI - MU)
-    YLAT <- MU + qnorm(matrix(runif(N*J), nrow = N, ncol = J)*(FB - FA) + FA)
+    for(j in 1:J){
+      FA <- pnorm(KAPPA[[j]][YPL1[, j]] - MU[, j])
+      FB <- pnorm(KAPPA[[j]][YPL2[, j]] - MU[, j])
+      YLAT[, j] <- MU[, j] + qnorm(runif(N)*(FB - FA) + FA)
+    }
     # (2)
     for(dim in 1:DIM){
       XITEM <- cbind(THETA[, dim], -1)
-      for(j in Jdim[, dim]){
+      for(j in jdim[[dim]]){
         Covitem <- solve(crossprod(XITEM[YOBS[, j], ]) + PrecXi0)
         muitem <- Covitem%*%crossprod(XITEM[YOBS[, j], ], YLAT[YOBS[, j], j])
         XI[1, j] <- 0
@@ -257,32 +251,40 @@ litnum1215 <- function(
           XI[, j] <- mvrnorm(1, muitem, Covitem)
         }
       }
+      ALPHA[jdim[[dim]], dim] <- XI[1, jdim[[dim]]]*(1/prod(XI[1, jdim[[dim]]]))^Jdiminv[dim]
+      BETA[jdim[[dim]]] <- XI[2, jdim[[dim]]] - sum(XI[2, jdim[[dim]]])/Jdim[dim]
     }
-    ALPHALITMEAN <- (XI[1, Jdim[, 1]] + XI[1, Jdim[, 3]])/2
-    ALPHANUMMEAN <- (XI[1, Jdim[, 2]] + XI[1, Jdim[, 4]])/2
-    BETALITMEAN <- (XI[2, Jdim[, 1]] + XI[2, Jdim[, 3]])/2
-    BETANUMMEAN <- (XI[2, Jdim[, 2]] + XI[2, Jdim[, 4]])/2
-    ALPHALITR <- ALPHALITMEAN*(1/prod(ALPHALITMEAN))^J1diminv
-    ALPHANUMR <- ALPHANUMMEAN*(1/prod(ALPHANUMMEAN))^J1diminv
-    BETALITR <- BETALITMEAN - sum(BETALITMEAN)/J1dim
-    BETANUMR <- BETANUMMEAN - sum(BETANUMMEAN)/J1dim
-    ALPHA[Jdim[, 1], 1] <- ALPHA[Jdim[, 3], 3] <- ALPHALITR
-    ALPHA[Jdim[, 2], 2] <- ALPHA[Jdim[, 4], 4] <- ALPHANUMR
-    BETA[c(Jdim[, 1], Jdim[, 3])] <- BETALITR
-    BETA[c(Jdim[, 2], Jdim[, 4])] <- BETANUMR
     # (3)
+    for(j in POSITEMORD){
+      maxTau <- ucminf(par = TAU[[j]], fn = lposttau, Yj = Y[YOBS[, j], j], Qj = QMI2[j],
+        alpha = ALPHA[j, jdim2[j]], beta = BETA[j], Theta = THETA[YOBS[, j], jdim2[j]], hessian = 1)
+      hatTau <- maxTau$par
+      InvhessTau <- solve(maxTau$hessian)
+      TAUC <- rmvt(1, delta = hatTau, sigma = InvhessTau, df = tdf)
+      ratio <- min(1, exp(
+        -lposttau(TAUC, Y[YOBS[, j], j], QMI2[j], ALPHA[j, jdim2[j]], BETA[j], THETA[YOBS[, j], jdim2[j]]) +
+        lposttau(TAU[[j]], Y[YOBS[, j], j], QMI2[j], ALPHA[j, jdim2[j]], BETA[j], THETA[YOBS[, j], jdim2[j]]) -
+        dmvt(TAUC, delta = hatTau, sigma = InvhessTau, df = tdf, log = TRUE) +
+        dmvt(TAU[[j]], delta = hatTau, sigma = InvhessTau, df = tdf, log = TRUE)
+      ))
+      if(runif(1) < ratio){
+        TAU[[j]] <- TAUC
+        KAPPA[[j]][3:Q[j]] <- cumsum(exp(TAUC))
+      }
+    }
+    # (4)
     for(i in 1:N){
       Covtheta <- solve(crossprod(ALPHA[YOBS[i, ], ]) + solve(SIGMA))
       mutheta <- Covtheta%*%(crossprod(ALPHA[YOBS[i, ], ], YLAT[i, YOBS[i, ]] +
         BETA[YOBS[i, ]]) + solve(SIGMA)%*%t(GAMMA)%*%XDM[i, ])
       THETA[i, ] <- mvrnorm(1, mutheta, Covtheta)
     }
-    # (4)
+    # (5)
     Covgamma <- solve(solve(SIGMA)%x%XX + PrecGamma0)
     mugamma <- Covgamma%*%((solve(SIGMA)%x%diag(K1X))%*%matrix(XDMt%*%THETA))
     GAMMA <- matrix(mvrnorm(1, mugamma, Covgamma), nrow = K1X)
     XGAMMA <- XDM%*%GAMMA
-    # (5)
+    # (6)
     VSigma <- crossprod(THETA - XGAMMA) + diag(DIM)
     SIGMA <- rwishart(NuSigma, chol2inv(chol(VSigma)))
     # save MCMC draws
@@ -290,11 +292,11 @@ litnum1215 <- function(
     if(saveiter){
       whichpv <- which(names(PVs) == paste("Iteration", ii))
       PVs[[whichpv]] <- setNames(data.frame(Xbasic[, 1], THETA),
-        c("seqid", paste0(rep(c("PVLit", "PVNum"), 2), whichpv,
-        rep(c("_12", "_15"), each = 2))))
+        c("seqid", paste0(c("PVLit", "PVNum", "PVPs"), whichpv,
+        rep("_12", 3))))
     }
     if(ANYXMIS){
-      # (6)
+      # (7)
       X2IMP[, XcolsTHETA] <- THETA
       X <- seqcart(X2IMP, xmisord, XOBS, XMIS, 5, 1e-04)
       X <- X[, -XcolsTHETA]
@@ -308,17 +310,21 @@ litnum1215 <- function(
     setTxtProgressBar(pb, ii)
   }
   close(pb)
-  finalweight12 <- LN1215[, 1, drop = FALSE]
+  finalweight12 <- LNP12_valid[, 1, drop = FALSE]
   finalweight12 <- merge(finalweight12,
     DAT$ZA5845[, c("seqid", "SPFWT0")], by = "seqid")[, -1]
-  PVsLit12_SUF <- LN1215[, 1, drop = FALSE]
+  PVsLit12_SUF <- LNP12_valid[, 1, drop = FALSE]
   PVsLit12_SUF <- merge(PVsLit12_SUF,
     DAT$ZA5845[, c("seqid", grep("PVLIT", names(DAT$ZA5845), value = TRUE))],
     by = "seqid")[, -1]
-  PVsNum12_SUF <- LN1215[, 1, drop = FALSE]
+  PVsNum12_SUF <- LNP12_valid[, 1, drop = FALSE]
   PVsNum12_SUF <- merge(PVsNum12_SUF,
     DAT$ZA5845[, c("seqid", grep("PVNUM", names(DAT$ZA5845), value = TRUE))],
     by = "seqid")[, -1]
+  PVsPs12_SUF <- LNP12_valid[, 1, drop = FALSE]
+  PVsPs12_SUF <- merge(PVsPs12_SUF,
+    DAT$ZA5845[, c("seqid", grep("PVPS", names(DAT$ZA5845), value = TRUE))],
+    by = "seqid")[, -1]  
   GMLit12_SUF <- mean(apply(PVsLit12_SUF, 2, wtd.mean, weights = finalweight12))
   GSdLit12_SUF <- mean(sqrt(apply(PVsLit12_SUF, 2, wtd.var,
     weights = finalweight12)))
@@ -326,38 +332,42 @@ litnum1215 <- function(
     weights = finalweight12))
   GSdNum12_SUF <- mean(sqrt(apply(PVsNum12_SUF, 2, wtd.var,
     weights = finalweight12)))
+  GMPs12_SUF <- mean(apply(PVsPs12_SUF, 2, wtd.mean,
+    weights = finalweight12))
+  GSdPs12_SUF <- mean(sqrt(apply(PVsPs12_SUF, 2, wtd.var,
+    weights = finalweight12)))
   PVsLit12_est <- sapply(PVs, `[[`, 2)
   PVsNum12_est <- sapply(PVs, `[[`, 3)
-  PVsLit15_est <- sapply(PVs, `[[`, 4)
-  PVsNum15_est <- sapply(PVs, `[[`, 5)
+  PVsPs12_est <- sapply(PVs, `[[`, 4)
   GMLit12_est <- mean(apply(PVsLit12_est, 2, wtd.mean, weights = finalweight12))
   GSdLit12_est <- mean(sqrt(apply(PVsLit12_est, 2, wtd.var, weights = finalweight12)))
   GMNum12_est <- mean(apply(PVsNum12_est, 2, wtd.mean, weights = finalweight12))
   GSdNum12_est <- mean(sqrt(apply(PVsNum12_est, 2, wtd.var, weights = finalweight12)))
+  GMPs12_est <- mean(apply(PVsPs12_est, 2, wtd.mean, weights = finalweight12))
+  GSdPs12_est <- mean(sqrt(apply(PVsPs12_est, 2, wtd.var, weights = finalweight12)))
   ALit <- GSdLit12_SUF/GSdLit12_est
   BLit <- -GMLit12_est*ALit + GMLit12_SUF
   ANum <- GSdNum12_SUF/GSdNum12_est
   BNum <- -GMNum12_est*ANum + GMNum12_SUF
+  APs <- GSdPs12_SUF/GSdPs12_est
+  BPs <- -GMPs12_est*APs + GMPs12_SUF
   PVsLit12_est_t <- apply(PVsLit12_est, 2, function(x) x*ALit + BLit)
   PVsNum12_est_t <- apply(PVsNum12_est, 2, function(x) x*ANum + BNum)
-  PVsLit15_est_t <- apply(PVsLit15_est, 2, function(x) x*ALit + BLit)
-  PVsNum15_est_t <- apply(PVsNum15_est, 2, function(x) x*ANum + BNum)
+  PVsPs12_est_t <- apply(PVsPs12_est, 2, function(x) x*APs + BPs)
   for(pv in 1:nopvs){
     PVs[[pv]][, 2] <- PVsLit12_est_t[, pv]
     PVs[[pv]][, 3] <- PVsNum12_est_t[, pv]
-    PVs[[pv]][, 4] <- PVsLit15_est_t[, pv]
-    PVs[[pv]][, 5] <- PVsNum15_est_t[, pv]
+    PVs[[pv]][, 4] <- PVsPs12_est_t[, pv]
     attr(PVs[[pv]], "var.labels") <- c(XLabels[1],
-      paste0("Literacy longitudinal scale score 2012 - PV", pv),
-      paste0("Numeracy longitudinal scale score 2012 - PV", pv),
-      paste0("Literacy longitudinal scale score 2015 - PV", pv),
-      paste0("Numeracy longitudinal scale score 2015 - PV", pv),
+      paste0("Literacy scale score 2012 - PV", pv),
+      paste0("Numeracy scale score 2012 - PV", pv),
+      paste0("Problem solving scale score 2012 - PV", pv),
       XLabels[-1])
-    save.dta13(data = PVs[[pv]], file = paste0(path, "litnum1215_", pv, ".dta"))
+    save.dta13(data = PVs[[pv]], file = paste0(path, "litnumps12_", pv, ".dta"))
   }
   t1 <- proc.time()
   ext <- round(round(t1[3] - t0[3]))
-  cat("litnum1215 completed :)\n")
+  cat("litnumps12 completed :)\n")
   if(ext < 7200){
     cat(paste("Your analysis took", round(ext/60),
       "minutes to execute"))
@@ -366,5 +376,5 @@ litnum1215 <- function(
       "hours to execute"))
   }
   return(PVs)
-
+  
 }

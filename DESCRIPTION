@@ -1,8 +1,8 @@
 Package: PVPIAACL
 Type: Package
 Title: Plausible Values estimation with the PIAAC-L data
-Version: 0.0.0.9000
-Imports: readstata13, MASS, rpart, Hmisc 
+Version: 0.1.0
+Imports: readstata13, MASS, mvtnorm, ucminf, rpart, Hmisc 
 Author: Jean-Christoph Gaasch
 Maintainer: Anna Scharl <anna.scharl@lifbi.de>
 Description: Bayesian estimation algorithm that simultaneously 
