@@ -4,20 +4,13 @@
 \alias{litnum1215}
 \title{Plausible values imputation using the PIAAC 2012 and PIAAC-L 2015 assessment data in the domains of literacy and numeracy}
 \usage{
-litnum1215(path, XplusVars = NULL, XplusVarsfactor = NULL, nopvs = 10,
-  itermcmc = 22000, burnin = 2000)
+litnum1215(path, X = NULL, nopvs = 10, itermcmc = 22000, burnin = 2000)
 }
 \arguments{
-\item{path}{full path of the folder containing the following PIAAC and PIAAC-L Scientific Use Files in Stata format: ZA5845,
-ZA5989_Persons_14, ZA5989_Household_14, ZA5989_Persons_15, ZA5989_Persons_16 and ZA5989_Household_16.}
+\item{path}{full path of the folder containing the data files ZA5845 and ZA5989_Persons_15 in Stata format.}
 
-\item{XplusVars}{character vector containing additional background variable names from the PIAAC and PIAAC-L
-Scientific Use Files ZA5845, ZA5989_Persons_14, ZA5989_Household_14, ZA5989_Persons_15, ZA5989_Persons_16 and
-ZA5989_Household_16. With \code{XplusVars} set to \code{NULL} (default) the basic specification of the population model is
-estimated.}
-
-\item{XplusVarsfactor}{logical vector of the same length as \code{XplusVars} indicating which elements of \code{XplusVars}
-are factor variables.}
+\item{X}{data frame containing the sequential ID (named \code{seqid}) and background variable from the PIAAC and PIAAC-L
+Scientific Use Files. They can be numeric or factor variables and contain missing values coded as \code{NA}. With \code{X} set to \code{NULL} (default) an empty population model is estimated.}
 
 \item{nopvs}{number of plausible values to draw for each respondent.}
 
@@ -27,7 +20,7 @@ are factor variables.}
 }
 \value{
 list with \code{nopvs} elements, each containing a data frame of the sequential ID, plausible values for
-each dimension and imputed versions of the partially missing covariate data. Additionally each list element is saved as a 
+each dimension and, if specified, imputed versions of \code{X}. Resulting plausible values are transformed onto the PIAAC 2012 scale (weighted means and standard deviations based on the SUF). Additionally each list element is saved as a 
 Stata file in the folder specified by \code{path}.
 }
 \description{

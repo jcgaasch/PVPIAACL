@@ -1,7 +1,7 @@
 Package: PVPIAACL
 Type: Package
 Title: Plausible Values estimation with the PIAAC-L data
-Version: 0.1.0
+Version: 0.2.0
 Imports: readstata13, MASS, mvtnorm, ucminf, rpart, Hmisc 
 Author: Jean-Christoph Gaasch
 Maintainer: Anna Scharl <anna.scharl@lifbi.de>
