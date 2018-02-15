@@ -18,7 +18,7 @@
 #' @importFrom readstata13 read.dta13 save.dta13
 #' @importFrom stats model.matrix runif rnorm pnorm qnorm predict
 #' @importFrom MASS mvrnorm
-#' @importFrom mvtnorm rmvt dmvt
+#' @importFrom mvtnorm rmvt dmvt dmvnorm
 #' @importFrom ucminf ucminf
 #' @importFrom rpart rpart rpart.control
 #' @importFrom Hmisc wtd.mean wtd.var
