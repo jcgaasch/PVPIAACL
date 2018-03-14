@@ -198,6 +198,8 @@ anchorpartner15 <- function(
   CovGamma0 <- 100*diag(K1X*DIM)
   PrecGamma0 <- solve(CovGamma0)
   NuSigma <- N + DIM
+  LO <- matrix(c(-Inf, 0)[Y + 1], N, J)
+  HI <- matrix(c(0, Inf)[Y + 1], N, J)
   ONES <- matrix(1, nrow = N, ncol = 1)
   cat("PVPIAACL is running...\n")
   cat("progress:\n")
@@ -242,7 +244,7 @@ anchorpartner15 <- function(
     if(saveiter){
       whichpv <- which(names(PVs) == paste("Iteration", ii))
       PVs[[whichpv]] <- setNames(data.frame(Xid, THETA),
-        c("seqid", paste0(c("PVLit", "PVNum", "PVRead", "PVMath"), whichpv,
+        c("pnrfestid_anchor", "pnrfestid_partner", paste0(c("PVLit", "PVNum", "PVRead", "PVMath"), whichpv,
           rep(c("_anchor", "_partner"), each = 2))))
     }
     if(ANYXMIS){
