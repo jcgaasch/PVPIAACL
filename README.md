@@ -1,6 +1,6 @@
 # PVPIAACL: Plausible Values estimation with the PIAAC-L data
 
-The Programme for the International Assessment of Adult Competencies-Longitudinal (PIAAC-L) Germany consortium partner Leibniz Institute for Educational Trajectories developed an R package which implements a Bayesian estimation algorithm that simultaneously generates plausible values (PVs; Mislevy, 1991) and imputes missing values in background variables. In addition to the PVs released in the PIAAC and PIAAC-L Scientific-Use-Files (SUFs), users can estimate PVs themselves specific to their research question, i.e., users select context variables from the PIAAC-L SUFs which are suitable for their analysis and directly enter the population model during PVs estimation. This estimation strategy addresses both item nonresponse in background variables as well as the "curse of dimensionality" due to the extensively large background information resulting from three waves of data collection in PIAAC-L. 
+The Programme for the International Assessment of Adult Competencies-Longitudinal (PIAAC-L) Germany consortium partner Leibniz Institute for Educational Trajectories developed an R package which implements a Bayesian estimation algorithm that simultaneously generates plausible values (PVs; Mislevy, 1991) and imputes missing values in background variables. In addition to the PVs released in the PIAAC and PIAAC-L Scientific-Use-Files (SUFs), users can estimate PVs themselves specific to their research question, i.e., users select context variables from the PIAAC-L SUFs which are suitable for their analysis and directly enter the population model during PVs estimation. This estimation strategy addresses both item nonresponse in background variables as well as the "curse of dimensionality" due to the extensively large background information resulting from three waves of data collection in PIAAC-L.
 
 Currently `PVPIAACL` allows the user to fit multidimensional latent regression models. It applies a *D*-dimensional two-parameter normal ogive graded response model without cross-loadings and a multivariate regression equation to model the relationship between the latent trait and additional person covariates. Thus, they combine the fields of measurement models and structural analysis. Latent regression models are typically employed to generate PVs in large-scale assessments.
 
@@ -9,8 +9,8 @@ Currently `PVPIAACL` allows the user to fit multidimensional latent regression m
 ## Features
 
 - Independent conjugate prior distributions are chosen to develop a Metropolis-within-Gibbs sampling algorithm based on the device of data augmentation (Tanner & Wong, 1987).
--   Sampling from the posterior distribution of parameters is enriched by sampling from the full conditional distributions of missing values in person covariates.
--   Approximations for the distributions of missing values are constructed from sequential classification and regression trees (Burgette & Reiter, 2010; Doove et al., 2014).
+- Sampling from the posterior distribution of parameters is enriched by sampling from the full conditional distributions of missing values in person covariates.
+- Approximations for the distributions of missing values are constructed from sequential classification and regression trees (Burgette & Reiter, 2010; Doove et al., 2014).
 
 ## Installation
 
@@ -23,13 +23,9 @@ devtools::install_github("jcgaasch/PVPIAACL")
 library(PVPIAACL)
 ```
 
-## Dependencies
-
-PVPIAACL relies on some routines from other R packages where the latest CRAN version is in use: `readstata13`, `MASS`, `mvtnorm`, `ucminf`, `numDeriv`, `rpart` and `Hmisc`.
-
 ## Functionality
 
-Aside from the auxiliary functions `lposttau()`, `rwishart()` and `seqcart()` R package `PVPIAACL` offers three main estimation routines: 
+Aside from the auxiliary functions `lposttau()`, `rwishart()` and `seqcart()` R package `PVPIAACL` offers three main estimation routines:
 
 - `litnumps12()`: PIAAC 2012 competence assessment in literacy, numeracy and problem solving in technology-rich environments (*D* = 3).
 - `litnum1215()`: PIAAC 2012 and PIAAC-L 2015 competence assessment in literacy and numeracy (*D* = 4).
@@ -38,6 +34,39 @@ Aside from the auxiliary functions `lposttau()`, `rwishart()` and `seqcart()` R 
 Concerning the test data the estimation routines treat nonresponse, items not reached or not attempted and items missing by design (due to the multiple matrix item sampling design applied in PIAAC) equally as `NA`. Unobserved test data is ignored so that the likelihood is provided only for the observed sample data. A detailed description of the corresponding sample characteristics and scaling procedures is provided in the technical report on scaling (Carstensen, Gaasch, & Rothaug, 2017).
 
 To use any of the functions, users need to create a folder which contains only the original PIAAC and PIAAC-L SUFs ZA5845, ZA5989_Persons_14 and ZA5989_Persons_15 **in Stata format**.
+
+## Weighting
+
+**PVPIAACL follows a model-based weighting strategy, i.e, all variables used to create weights in PIAAC-L should be included in the population model**. The table below shows these variables all of which are in the data set ZA5845 and it is suggested to use these variables as a baseline specification for the PVs.
+
+| Name          | Label                                                               |
+| ------------- | --------------------------------------------------------------------|
+| AGE_R         | Person resolved age from BQ and QC check (derived)                  |
+| GENDER_R      | Person resolved gender from BQ and QC check (derived)               |
+| C_D05         | Current status/work history - Employment status (DERIVED BY CAPI)   |
+| I_Q08         | About yourself - Health - State                                     |
+| J_Q01_C       | Background - People in household (top-coded at 6)                   |
+| J_Q03a        | Background - Children                                               |
+| NATIVESPEAKER | Respondent is a native speaker (DERIVED BY CAPI)                    |
+| MONTHLYINCPR  | Monthly income percentile rank category (derived)                   |
+| Federal_state | Federal state - Berlin West/East in one category                    |
+| GKPOL         | Political municipality size in 8 categories                         |
+| PARED         | Highest of mother or father's level of education (derived)          |
+| IMGEN         | First and second generation immigrants (derived)                    |
+| EDCAT8        | Highest level of formal education obtained (8 categories - derived) |
+
+Further information about weighting is given in the [PIAAC technical report](https://www.gesis.org/fileadmin/piaac/Downloadbereich/TechnicalReport-ebook.pdf) and in the [weighting reports of the respective wave of PIAAC-L](https://www.gesis.org/piaac/fdz/daten/langzeitstudie-piaac-l/).
+
+## Background data
+
+There are three requirements the background data has to meet for the function. First, the background data has to contain the sequential ID of the subjects. The ID has to be named `'seqid'` in `litnumps12()` and `litnum1215()` or `'pnrfestid'` for both data sets in `anchorpartner15()`. Secondly, the R object containing the background data has to be a data.frame. Thirdly, all categorical data (e.g. gender, employment status) have to be converted into factors. How this is achieved in R will be shown in the first example.
+Furthermore, the background data has to include *all* variables and variable configurations (i.e. quadratic or interaction terms etc.) *that will be used in the subsequent analysis* with plausible values. Otherwise, the relationships found in the data will be **biased**.
+All of these preparations can be done in R or any other statistical software and later read into R.
+Missing values are represented as `NA` in R. Any other coding will not be recognized as missing and, thus, bias the estimation.
+
+## Dependencies
+
+PVPIAACL relies on some routines from other R packages where the latest CRAN version is in use: `readstata13`, `MASS`, `mvtnorm`, `ucminf`, `numDeriv`, `rpart` and `Hmisc`.
 
 ## Examples
 
@@ -56,25 +85,7 @@ mypath <- 'C:/Users/myuser/Desktop/mydatafolder/'
 PIAAC_PVs_2012_M0 <- litnumps12(path = mypath)
 ```
 
-will estimate an empty population model. Background variables on the latent competencies both from the PIAAC and PIAAC-L Scientific Use Files can be specified by the argument `X`, where `X` is a data frame containing the sequential ID (which has to be renamed to `seqid`) and the respective covariates. They can be numeric or categorical variables (factors in R) and contain missing values coded as `NA`. **PVPIAACL follows a model-based weighting strategy, i.e, all independent variables used to create weights in PIAAC-L (see the GESIS papers on weighting in PIAAC-L) should be included in the population model**. An exemplary basic specification for `litnumps12()` considering PIAAC background variables from ZA5845 is given as 
-
-| Name          | Label                                                               |
-| ------------- |:--------------------------------------------------------------------|
-| AGE_R         | Person resolved age from BQ and QC check (derived)                  | 
-| GENDER_R      | Person resolved gender from BQ and QC check (derived)               |
-| C_D05         | Current status/work history - Employment status (DERIVED BY CAPI)   | 
-| I_Q08         | About yourself - Health - State                                     | 
-| J_Q01_C       | Background - People in household (top-coded at 6)                   | 
-| J_Q03a        | Background - Children                                               | 
-| NATIVESPEAKER | Respondent is a native speaker (DERIVED BY CAPI)                    | 
-| MONTHLYINCPR  | Monthly income percentile rank category (derived)                   | 
-| Federal_state | Federal state - Berlin West/East in one category                    |
-| GKPOL         | Political municipality size in 8 categories                         | 
-| PARED         | Highest of mother or father's level of education (derived)          | 
-| IMGEN         | First and second generation immigrants (derived)                    | 
-| EDCAT8        | Highest level of formal education obtained (8 categories - derived) | 
-
-and can be created in R via 
+will estimate an **empty** population model. Background variables on the latent competencies both from the PIAAC and PIAAC-L Scientific Use Files can be specified by the argument `X`, where `X` is a data frame containing the sequential ID and the respective covariates. They can be numeric or categorical variables (factors in R) and contain missing values coded as `NA`. Please note again that **PVPIAACL follows a model-based weighting strategy**. The basic specification comprising the suggested minimum model specificaton as laid out above can be created for `litnumps12()` in R via
 
 ``` r
 library(readstata13)
@@ -84,15 +95,13 @@ Xbasic <- PIAAC[, c("seqid", "AGE_R", "GENDER_R", "C_D05", "I_Q08", "J_Q01_C", "
   "NATIVESPEAKER", "MONTHLYINCPR", "Federal_state", "GKPOL", "PARED", "IMGEN", "EDCAT8")]
 ```
 
-**Please also note that to avoid uncongeniality problems the conditioning variables included in the latent regression model to generate PVs need to match the variables related to latent abilities in later analyses**. 
-
-Let's say for illustration purposes we want to analyze the relationship of literacy, numeracy and problem solving competencies 2012 with the respondents' grades in German, mathematics and first foreign language surveyed in PIAAC-L wave one. After identifying the variables of interest in the corresponding codebook we need to recode missing values and define levels of measurement (i.e. convert categorical data to `factor`s) before calling `litnumps12()`.  
+Let's say for illustration purposes we want to analyze the relationship of literacy, numeracy and problem solving competencies 2012 with the respondents' grades in German, mathematics and first foreign language surveyed in PIAAC-L wave one. We do not care for weighting in this example. After identifying the variables of interest in the corresponding codebook we need to recode missing values and define levels of measurement (i.e. convert categorical data to `factor`s) before calling `litnumps12()`.  
 
 ``` r
 library(car)
 PIAACL_w1 <- read.dta13(file = paste0(mypath, "ZA5989_Persons_14_v3-0-0.dta"))
 X <- PIAACL_w1[, c("seqid", "lsch1_14", "lsch2_14", "lsch3_14")]
-X[, -1] <- lapply(X[, -1], 
+X[, -1] <- lapply(X[, -1],
   function(x){
 		x_recode <- recode(x, "c(-3, 7) = NA")
 		factor(x_recode)
@@ -101,7 +110,7 @@ X[, -1] <- lapply(X[, -1],
 PIAAC_PVs_2012_M1 <- litnumps12(path = mypath, X = X)
 ```
 
-The return value of the `litnumps12()` is a list with `nopvs` elements (`nopvs` defines the number of PVs to draw for each respondent), each containing a data frame of the sequential ID, PVs for each dimension and, if specified, imputed versions of `X`. Additionally each list element is saved as a Stata file in the folder defined by `path`. Resulting plausible values are transformed onto the PIAAC 2012 scale (weighted means and standard deviations based on the SUF). **Note that PVs and nonresponse imputations have to arise from the same iteration when analyses with plausible values are performed**.
+The return value of the `litnumps12()` is a list with `nopvs` elements (`nopvs` defines the number of PVs to draw for each respondent), each containing a data frame of the sequential ID, PVs for each dimension and, if specified, imputed versions of `X`. Additionally each list element is saved as a Stata file in the folder defined by `path`. Resulting plausible values are transformed onto the PIAAC 2012 scale (weighted means and standard deviations based on the SUF). **Note that PVs and nonresponse imputations have to come from the same iteration when analyses with plausible values are performed**.
 
 ### The `litnum1215()` function
 
