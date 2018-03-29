@@ -4,7 +4,7 @@ The Programme for the International Assessment of Adult Competencies-Longitudina
 
 Currently `PVPIAACL` allows the user to fit multidimensional latent regression models. It applies a *D*-dimensional two-parameter normal ogive graded response model without cross-loadings and a multivariate regression equation to model the relationship between the latent trait and additional person covariates. Thus, they combine the fields of measurement models and structural analysis. Latent regression models are typically employed to generate PVs in large-scale assessments.
 
-**Note that users require the PIAAC 2012 Germany (ZA5845) and PIAAC-L (ZA5989) SUFs from the research data centre PIAAC at GESIS to work with R package** `PVPIAACL`.
+**Note that users require the PIAAC 2012 Germany (ZA5845) and PIAAC-L (ZA5989) SUFs from the research data centre PIAAC at GESIS to work with R package** `PVPIAACL`. It does **not** work with the PIAAC public use file provided by OECD.
 
 ## Features
 
